@@ -1,24 +1,39 @@
 $(document).ready(() => {
-	exSignOut()
+    exSignOut()
 })
 
 function exSignOut() {
-	var menu = $('#nb')
-	if (!menu) {
-		return
-	}
+    var menu = $('#nb')
+    if (!menu.length || $('#haruhichanSignOut').length) {
+        return
+    }
 
-	var img = $($('img', menu)[0]).clone()
-	var a = $($('a', menu)[0]).clone()
-		.html('Sign out')
-		.attr('href', '#')
-		.attr('id', 'haruhichanSignOut')
-		.click(() => {
-			console.log('Sign out...')
-			chrome.runtime.sendMessage('deleteAllCookies', function () {
-				chrome.runtime.sendMessage('reload', function () { })
-			})
-		})
+    var first = menu.children().first()
+    var item
+    var link
 
-	menu.append(img, a)
+    if (first.is('img')) {
+        item = link = menu.children('a').first().clone()
+        if (link.length) {
+            menu.append(first.clone())
+        }
+    } else {
+        item = first.clone()
+        link = item.is('a') ? item : item.find('a').first()
+    }
+
+    if (!link.length) {
+        return
+    }
+
+    link.text('Sign out')
+        .attr('href', '#')
+        .attr('id', 'haruhichanSignOut')
+        .on('click', (e) => {
+            e.preventDefault()
+            chrome.runtime.sendMessage({ action: 'logout' })
+                .finally(() => location.reload())
+        })
+
+    menu.append(item)
 }

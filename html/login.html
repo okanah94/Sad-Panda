@@ -1,40 +1,36 @@
 <div id="app" class="container">
 
-    <toast-container></toast-container>
+    <div id="toasts"></div>
 
     <div>
-        <img src="https://exhentai.org/">
+        <img id="logo" alt="Sad Panda" width="96" height="96">
     </div>
 
-    <form v-on:submit.prevent="login">
+    <form id="login-form">
 
         <div class="form-group">
-            <input v-model="username" id="username" class="form-control" type="text" placeholder="Username" required autofocus :disabled="disabled">
+            <input id="username" class="form-control" type="text" placeholder="Username" autocomplete="username" required>
         </div>
 
         <div class="form-group">
-            <input v-model="password" id="password" class="form-control" type="password" placeholder="Password" required :disabled="disabled">
+            <input id="password" class="form-control" type="password" placeholder="Password" autocomplete="current-password" required>
         </div>
 
         <div class="form-check">
-            <input v-model="remember" id="remember-me" class="form-check-input" type="checkbox" :disabled="disabled">
+            <input id="remember-me" class="form-check-input" type="checkbox">
             <label class="form-check-label" for="remember-me">Remember me</label>
         </div>
 
-        <button type="submit" class="btn btn-success btn-lg btn-block" :disabled="disabled">
+        <button type="submit" class="btn btn-success btn-lg btn-block">
             Sign in
         </button>
 
     </form>
 
     <div>
-        <a href="https://github.com/HitomaruKonpaku/Sad-Panda" target="_blank">
-            <img :src="image.logo.github" alt="GitHub Mark" height="22">
+        <a href="https://github.com/okanah94/Sad-Panda" target="_blank" rel="noopener noreferrer">
+            <img id="github" alt="GitHub Mark" height="22">
         </a>
     </div>
-
-    <!-- <div>
-        <a href="https://www.patreon.com/Swaps4" target="_blank">Presented by Swaps4</a>
-    </div> -->
 
 </div>

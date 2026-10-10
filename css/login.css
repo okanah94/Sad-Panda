@@ -1,3 +1,12 @@
+html,
+body {
+    background-color: #34353b;
+}
+
+body {
+    padding-top: 60px;
+}
+
 .container {
     width: 290px;
     margin: auto;
@@ -16,4 +25,30 @@ form {
 .form-group,
 .form-check {
     margin-bottom: 5px;
+}
+
+#toasts {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    width: 280px;
+}
+
+.sp-toast {
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    color: #FFF;
+    text-align: left;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .4);
+    transition: opacity .3s;
+}
+
+.sp-toast-success {
+    background-color: #28a745;
+}
+
+.sp-toast-error {
+    background-color: #dc3545;
 }
