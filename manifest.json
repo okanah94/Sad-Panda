@@ -1,7 +1,7 @@
 {
     "name": "Sad Panda",
     "description": "Access to ExHentai",
-    "version": "3.2",
+    "version": "3.3",
     "manifest_version": 3,
     "permissions": [
         "cookies",
@@ -27,19 +27,11 @@
     "content_scripts": [
         {
             "matches": [
-                "*://exhentai.org/"
-            ],
-            "js": [
-                "js/jquery.min.js",
-                "js/login.js"
-            ]
-        },
-        {
-            "matches": [
                 "*://exhentai.org/*"
             ],
             "js": [
                 "js/jquery.min.js",
+                "js/login.js",
                 "js/logout.js"
             ],
             "css": [

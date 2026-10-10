@@ -26,7 +26,11 @@ function isSadPanda() {
     }
 
     var body = document.body
-    return !body || (!body.children.length && !body.textContent.trim())
+    if (!body) {
+        return true
+    }
+
+    return !body.innerText.trim() && !body.querySelector('img, iframe, video, canvas, input, form')
 }
 
 function addStyle(path) {

@@ -17,7 +17,7 @@ Chrome/Chromium extension to access ExHentai
 # Fix
 
 * Manifest version 2 deprecated errors
-* Login form not showing on the blank ExHentai page
+* Login form not showing on the blank ExHentai page, now on every ExHentai link
 * Login requests blocked by CORS, now sent from the background service worker
 * Cookies copied before the page reloads
 * Existing e-hentai.org sessions are picked up automatically
