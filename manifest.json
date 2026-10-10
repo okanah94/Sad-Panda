@@ -1,10 +1,11 @@
 {
     "name": "Sad Panda",
     "description": "Access to ExHentai",
-    "version": "3.3",
+    "version": "3.4",
     "manifest_version": 3,
     "permissions": [
         "cookies",
+        "declarativeNetRequestWithHostAccess",
         "storage",
         "tabs"
     ],

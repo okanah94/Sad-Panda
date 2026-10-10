@@ -27,6 +27,11 @@ form {
     margin-bottom: 5px;
 }
 
+#eh-login {
+    color: #DDD;
+    text-decoration: underline;
+}
+
 #toasts {
     position: fixed;
     top: 12px;

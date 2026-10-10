@@ -20,7 +20,8 @@ Chrome/Chromium extension to access ExHentai
 * Login form not showing on the blank ExHentai page, now on every ExHentai link
 * Login requests blocked by CORS, now sent from the background service worker
 * Cookies copied before the page reloads
-* Existing e-hentai.org sessions are picked up automatically
+* Existing e-hentai.org sessions are picked up automatically, including after signing in on e-hentai.org in another tab
+* Clearer login errors, with the reason given by e-hentai.org
 * Sign out link for the current ExHentai menu layout
 * Removed Vue and Bootstrap JS, which do not run under Manifest V3 content script restrictions
 * Saved credentials moved from page localStorage to extension storage

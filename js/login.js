@@ -1,20 +1,62 @@
 $(document).ready(() => {
     if (!isSadPanda()) {
+        setRetried(false)
         return
     }
 
-    chrome.runtime.sendMessage({ action: 'sync' })
+    sync()
         .then((result) => {
-            if (result && result.changed) {
+            if (shouldReload(result)) {
                 location.reload()
                 return
             }
-            showLogin(result && result.noAccess)
+            showLogin(result)
         })
         .catch(() => {
-            showLogin(false)
+            showLogin(null)
         })
 })
+
+function sync() {
+    return chrome.runtime.sendMessage({ action: 'sync' })
+}
+
+function retried() {
+    try {
+        return sessionStorage.getItem('sp_retried') === '1'
+    } catch (e) {
+        return true
+    }
+}
+
+function setRetried(value) {
+    try {
+        if (value) {
+            sessionStorage.setItem('sp_retried', '1')
+        } else {
+            sessionStorage.removeItem('sp_retried')
+        }
+    } catch (e) {
+    }
+}
+
+function shouldReload(result) {
+    if (!result) {
+        return false
+    }
+
+    if (result.changed) {
+        setRetried(false)
+        return true
+    }
+
+    if (result.retry && !retried()) {
+        setRetried(true)
+        return true
+    }
+
+    return false
+}
 
 function isSadPanda() {
     if (document.contentType && document.contentType.indexOf('image/') === 0) {
@@ -38,7 +80,7 @@ function addStyle(path) {
         .appendTo(document.head || document.documentElement)
 }
 
-function showLogin(noAccess) {
+function showLogin(status) {
     fetch(chrome.runtime.getURL('html/login.html'))
         .then((res) => res.text())
         .then((html) => {
@@ -50,7 +92,7 @@ function showLogin(noAccess) {
             addStyle('css/login.css')
 
             $('body').removeAttr('style').html(html)
-            initLogin(noAccess)
+            initLogin(status)
         })
 }
 
@@ -75,7 +117,7 @@ function clearLegacyStorage() {
     }
 }
 
-function initLogin(noAccess) {
+function initLogin(status) {
     var form = $('#login-form')
     var controls = form.find('input, button')
     var username = $('#username')
@@ -96,11 +138,19 @@ function initLogin(noAccess) {
         username.trigger('focus')
     })
 
-    if (noAccess) {
-        toast('error', 'Your account does not have access to ExHentai yet.')
+    if (status && status.found) {
+        toast('error', 'Your e-hentai.org login was found, but ExHentai is still blank. This account may not have ExHentai access yet.')
     } else {
         toast('success', 'Ready!')
     }
+
+    $(window).on('focus', () => {
+        sync().then((result) => {
+            if (result && result.changed) {
+                location.reload()
+            }
+        })
+    })
 
     function setDisabled(disabled) {
         controls.prop('disabled', disabled)
@@ -128,6 +178,7 @@ function initLogin(noAccess) {
         })
             .then((result) => {
                 if (result && result.ok) {
+                    setRetried(false)
                     toast('success', 'You are now logged in!')
                     return storageSave().then(() => location.reload())
                 }

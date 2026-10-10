@@ -1,5 +1,6 @@
 const EX_URL = 'https://exhentai.org/'
 const LOGIN_URL = 'https://forums.e-hentai.org/index.php?act=Login&CODE=01'
+const LOGIN_PAGE = 'https://forums.e-hentai.org/index.php?act=Login&CODE=00'
 const LOGOUT_COOKIES = ['yay', 'igneous', 'ipb_anonlogin', 'ipb_member_id', 'ipb_pass_hash', 'ipb_session_id']
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -31,7 +32,7 @@ async function removeExCookie(name) {
 async function setHentaiCookies() {
 	const source = (await chrome.cookies.getAll({ domain: 'e-hentai.org' })).filter(isHentaiCookie)
 	if (!source.some((cookie) => cookie.name === 'ipb_member_id')) {
-		return { found: false, changed: false, noAccess: false }
+		return { found: false, changed: false, retry: false }
 	}
 
 	let changed = false
@@ -52,40 +53,86 @@ async function setHentaiCookies() {
 		changed = true
 	}
 
-	let noAccess = false
 	if (changed) {
 		await removeExCookie('yay')
 		const igneous = await chrome.cookies.get({ url: EX_URL, name: 'igneous' })
 		if (igneous && igneous.value === 'mystery') {
 			await removeExCookie('igneous')
 		}
-	} else {
-		const igneous = await chrome.cookies.get({ url: EX_URL, name: 'igneous' })
-		noAccess = !!igneous && igneous.value === 'mystery'
+		return { found: true, changed, retry: false }
 	}
 
-	return { found: true, changed, noAccess }
+	const igneous = await removeExCookie('igneous')
+	const yay = await removeExCookie('yay')
+	return { found: true, changed, retry: !!(igneous || yay) }
+}
+
+async function hasHentaiLogin() {
+	const member = await chrome.cookies.get({ url: 'https://e-hentai.org/', name: 'ipb_member_id' })
+	const pass = await chrome.cookies.get({ url: 'https://e-hentai.org/', name: 'ipb_pass_hash' })
+	return !!(member && member.value && member.value !== '0' && pass && pass.value)
+}
+
+async function setLoginHeaders() {
+	try {
+		await chrome.declarativeNetRequest.updateSessionRules({
+			removeRuleIds: [1],
+			addRules: [{
+				id: 1,
+				priority: 1,
+				action: {
+					type: 'modifyHeaders',
+					requestHeaders: [
+						{ header: 'Referer', operation: 'set', value: LOGIN_PAGE },
+						{ header: 'Origin', operation: 'set', value: 'https://forums.e-hentai.org' },
+					],
+				},
+				condition: {
+					urlFilter: '|https://forums.e-hentai.org/index.php',
+					tabIds: [chrome.tabs.TAB_ID_NONE],
+				},
+			}],
+		})
+	} catch (e) {
+	}
+}
+
+function cleanText(html) {
+	return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function forumError(text) {
+	const match = text.match(/The error returned was:\s*<\/h4>\s*<p>([\s\S]*?)<\/p>/i)
+		|| text.match(/<div class="errorwrap">([\s\S]*?)<\/div>/i)
+		|| text.match(/<span class="postcolor">([\s\S]*?)<\/span>/i)
+	return match ? cleanText(match[1]) : ''
+}
+
+function pageTitle(text) {
+	const match = text.match(/<title>([\s\S]*?)<\/title>/i)
+	return match ? cleanText(match[1]) : ''
 }
 
 async function login(username, password) {
 	const body = new URLSearchParams({
 		referer: 'https://forums.e-hentai.org/index.php',
+		b: '',
+		bt: '',
 		UserName: username,
 		PassWord: password,
 		CookieDate: '1',
 	})
 
+	await setLoginHeaders()
+
 	let text
+	let status
 	try {
 		const res = await fetch(LOGIN_URL, { method: 'POST', body, credentials: 'include' })
+		status = res.status
 		text = await res.text()
 	} catch (e) {
 		return { error: 'Error sending POST request to forums.e-hentai.org!' }
-	}
-
-	if (text.indexOf('You are now logged in as:') !== -1) {
-		const result = await setHentaiCookies()
-		return result.found ? { ok: true } : { error: 'Unable to set cookies' }
 	}
 
 	if (text.indexOf('Username or password incorrect') !== -1) {
@@ -96,7 +143,17 @@ async function login(username, password) {
 		return { error: 'No account exists with name "' + username + '"' }
 	}
 
-	return { error: 'Unexpected login response. Log in at forums.e-hentai.org, then reload this page.' }
+	if (/captcha|g-recaptcha|h-captcha|cf-turnstile/i.test(text) && text.indexOf('You are now logged in as:') === -1) {
+		return { error: 'e-hentai.org wants a captcha. Use the e-hentai.org link below to sign in there, then come back to this tab.' }
+	}
+
+	if (text.indexOf('You are now logged in as:') !== -1 || await hasHentaiLogin()) {
+		const result = await setHentaiCookies()
+		return result.found ? { ok: true } : { error: 'Unable to set cookies' }
+	}
+
+	const reason = forumError(text) || pageTitle(text)
+	return { error: 'Unexpected login response (HTTP ' + status + (reason ? ': ' + reason : '') + '). Use the e-hentai.org link below to sign in there, then come back to this tab.' }
 }
 
 async function deleteAllCookies() {
